@@ -192,7 +192,7 @@ class BoardController
         $uploadedByIndex = $this->uploadIndexedFiles($boardEntity->id, $files);
         $finalPaths = $this->mergeImagePaths($orders, $uploadedByIndex, $existingImages);
 
-        // 기존 이미지 중 최종 목록에서 빠진 파일만 디스크에서 삭제
+        // 기존 이미지 중 빠진 파일만 삭제
         $removedImages = array_diff($existingImages, $finalPaths);
         if (!empty($removedImages)) {
             FileHandler::delete(array_values($removedImages));
@@ -364,7 +364,6 @@ class BoardController
 
     private function getCommunityPasswordHeader(): ?string
     {
-        // 요구사항의 오탈자 헤더를 기준으로 하되 올바른 철자도 호환한다.
         $password = $_SERVER['HTTP_COMUNITY_PASSWORD']
             ?? $_SERVER['HTTP_COMMUNITY_PASSWORD']
             ?? null;

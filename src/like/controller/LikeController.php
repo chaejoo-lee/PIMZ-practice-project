@@ -23,7 +23,9 @@ class LikeController
 
     public function post(UserInfoDto $userInfoDto): bool
     {
-        [$targetType, $targetId] = $this->validate();
+        $targetType = strtolower(trim($_GET['target_type'] ?? ''));
+        $targetId = (int) ($_GET['target_id'] ?? 0);
+
         $result = $this->likeRepository->addLike($userInfoDto->id, $targetType, $targetId);
 
         if (!$result) {
@@ -42,7 +44,9 @@ class LikeController
 
     public function delete(UserInfoDto $userInfoDto): bool
     {
-        [$targetType, $targetId] = $this->validate();
+        $targetType = strtolower(trim($_GET['target_type'] ?? ''));
+        $targetId = (int) ($_GET['target_id'] ?? 0);
+
         $result = $this->likeRepository->removeLike($userInfoDto->id, $targetType, $targetId);
         if (!$result) {
             throw new InvalidArgumentException('이미 삭제했습니다', 409);
@@ -58,22 +62,4 @@ class LikeController
         );
     }
 
-    /**
-     * 유효성 검증 메서드
-     * SQL 인젝션 방지
-     */
-    private function validate(): array
-    {
-        $targetType = strtolower(trim($_GET['target_type'] ?? ''));
-        $targetId = (int) ($_GET['target_id'] ?? 0);
-
-        if (!in_array($targetType, self::TARGET_TYPE_MAP, true) || $targetId <= 0) {
-            throw new InvalidArgumentException('유효하지 않은 target_type 또는 target_id 입니다.', 400);
-        }
-
-        return [
-            $targetType,
-            $targetId,
-        ];
-    }
 }

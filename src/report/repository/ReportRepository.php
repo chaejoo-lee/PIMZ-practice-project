@@ -12,7 +12,7 @@ class ReportRepository
     }
 
     /**
-     * 신고된 게시글 전체 목록 및 총 신고 횟수 조회 (관리자용)
+     * 신고된 게시글 전체 목록 및 총 신고 횟수 조회
      */
     public function getAll(int $minCount = 0): array
     {
@@ -81,7 +81,6 @@ class ReportRepository
      */
     public function create(int $boardId, int $userId): bool
     {
-        // 1. 실제 존재하는 게시글인지 검증 (없는 게시글 ID일 경우 FK 에러 대신 400 예외 유도)
         $exists = MySQL::query(
             "SELECT id FROM board WHERE id = ? LIMIT 1",
             [$boardId]
@@ -119,7 +118,7 @@ class ReportRepository
     }
 
     /**
-     * 신고된 게시글 자체를 삭제 (관리자 제재 승인)
+     * 신고된 게시글 자체를 삭제 
      */
     public function deleteReportedBoard(int $boardId): bool
     {
