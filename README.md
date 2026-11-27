@@ -2,9 +2,10 @@
 
 ## 테스트 계정
 
-- `admin@test.com` / test1234 (관리자)
-- `cjlee@test.com` / test1234
-- `test@test.com` / test1234
+- `admin@test.com` / test1234 (관리자) /
+  7d689f31b3863e3d7250e32fba9991d9bb15f03d34d2774ce9220402c45e2167
+- `test_2@test.com` / test1234 / 7e63def7ea7262631ba2807aafdbb0cbbb5891d436a791157a2d3f95485f8230
+- `test@test.com` / test1234 / a5cf7970501e18af6e427ca240af23f5d65bb435f2dd7f4b239a084cfb45e740
 
 ## 작업 요약
 
@@ -58,7 +59,15 @@
 
 ---
 
-### 게시글
+### 게시글 옵션
+
+- 수정, 삭제, 신고 메뉴
+- 같은 유저가 게시글 여러번 신고해도 한번만 신고
+  ![](/img/6.2.게시글옵션.png)
+
+---
+
+### 게시글 작성
 
 - 이미지 다중 업로드
 - 미리보기에서 드롭다운을 통한 이미지 순서 변경 및 수정
