@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>EZ LINK</title>
+    <link href="./css/output.css" rel="stylesheet" />
+    <script src="./js/jquery-3.5.1.js"></script>
+    <script src="./js/config.js"></script>
+  </head>
+  <body
+    class="min-h-screen bg-[#0d1011] font-['Noto_Sans_KR',sans-serif] text-white antialiased"
+  >
+    <header
+      class="sticky top-0 z-40 border-t-4 border-[#303335] border-b border-[#2a3033] bg-[#0d1011]/95 backdrop-blur"
+    >
+      <div class="mx-auto flex h-15 max-w-370 items-center gap-4 px-5">
+        <a href="index.html" class="text-xl font-black">EZ LINK</a>
+        <a
+          id="cancelLink"
+          href="index.html"
+          class="ml-auto text-sm font-bold text-[#9baab1] transition hover:text-white"
+          >목록으로</a
+        >
+      </div>
+    </header>
+    <main class="mx-auto max-w-[780px] px-5 py-9">
+      <h1 class="mt-1 text-2xl font-black sm:text-3xl">작성</h1>
+      <form id="form" class="mt-8 border-t border-[#2a3033] pt-6">
+        <label class="grid gap-2 text-sm font-bold"
+          >게시판
+          <select
+            id="category"
+            required
+            class="rounded-xl border border-[#252c2f] bg-[#13181a] p-3 text-white focus:border-[#46545a] focus:outline-none"
+          ></select>
+        </label>
+        <label class="mt-5 grid gap-2 text-sm font-bold"
+          >제목
+          <input
+            id="title"
+            required
+            maxlength="100"
+            placeholder="제목을 입력하세요"
+            class="rounded-xl border border-[#252c2f] bg-[#13181a] p-3 text-white focus:border-[#46545a] focus:outline-none"
+          />
+        </label>
+        <label class="mt-5 grid gap-2 text-sm font-bold"
+          >이미지
+          <input
+            id="images"
+            type="file"
+            multiple
+            accept="image/*"
+            class="rounded-xl border border-dashed border-[#46545a] bg-[#13181a] p-5 text-[#d4dde1]"
+          />
+        </label>
+        <!-- 드래그 가능한 이미지 미리보기 -->
+        <div id="preview" class="mt-4 flex flex-wrap gap-3"></div>
+        <label class="mt-5 grid gap-2 text-sm font-bold"
+          >본문
+          <textarea
+            id="content"
+            required
+            placeholder="이야기를 자유롭게 적어주세요"
+            class="min-h-64 resize-y rounded-xl border border-[#252c2f] bg-[#13181a] p-3 text-white focus:border-[#46545a] focus:outline-none"
+          ></textarea>
+        </label>
+
+        <p id="message" class="hidden" role="alert"></p>
+        <div class="mt-7 flex justify-end gap-2">
+          <a
+            href="index.html"
+            class="rounded-full border border-[#2a3033] px-5 py-2.5 font-bold text-[#d4dde1] transition hover:bg-[#1e2528]"
+            >취소</a
+          >
+          <button
+            id="submitButton"
+            type="submit"
+            class="cursor-pointer rounded-full bg-white px-5 py-2.5 font-black text-[#101314] transition hover:bg-slate-200 disabled:opacity-50"
+          >
+            등록하기
+          </button>
+        </div>
+      </form>
+    </main>
+
+    <!-- 미리보기 카드 템플릿 -->
+    <template id="previewItemTemplate">
+      <div
+        class="relative shrink-0 cursor-grab rounded-xl border border-[#252c2f] bg-[#13181a] p-1 transition active:cursor-grabbing"
+      >
+        <img
+          data-preview-img
+          class="size-28 rounded-lg object-cover select-none"
+        />
+        <span
+          data-preview-index
+          class="pointer-events-none absolute top-2 left-2 rounded-full bg-black/80 px-2 py-0.5 text-[11px] font-black text-white"
+        ></span>
+        <button
+          data-preview-remove
+          type="button"
+          class="absolute top-2 right-2 grid size-6 cursor-pointer place-items-center rounded-full bg-black/80 text-sm font-black leading-none text-white transition hover:bg-rose-600"
+        >
+          ×
+        </button>
+      </div>
+    </template>
+
+    <script>
+      var API_BASE_URL =
+        window.LOCAL_API_URL || "https://dev01.ezapps.co.kr/index.php";
+      $(function () {
+        var qs = new URLSearchParams(location.search);
+        var boardId = Number(qs.get("id") || 0);
+        var editing = location.pathname.endsWith("edit.html") || boardId > 0;
+        var communityId = Number(qs.get("communityId") || 0);
+        var communities = [];
+        var orderedMediaItems = [];
+        var imageCacheMap = {};
+        var draggedItemIndex = null;
+        var mediaSeq = 0;
+        var currentUser = null;
+
+        function cloneTemplate(selector) {
+          var content = $(selector).prop("content");
+          return $(content).children().first().clone();
+        }
+
+        function authHeaders() {
+          var sessionId = localStorage.getItem("SessionId") || "";
+          return sessionId ? { Authorization: sessionId } : {};
+        }
+
+        function request(options) {
+          return $.ajax(
+            $.extend({ dataType: "json", headers: authHeaders() }, options),
+          );
+        }
+
+        function secretHeaders() {
+          var headers = authHeaders();
+          var password = sessionStorage.getItem(
+            "community.password." + communityId,
+          );
+          if (password !== null && communityId)
+            headers["Comunity-Password"] = password;
+          return headers;
+        }
+
+        function retryOnPassword(send) {
+          var deferred = $.Deferred();
+          var hasAttempted = false;
+
+          function attempt() {
+            send()
+              .done(deferred.resolve)
+              .fail(function (xhr) {
+                if (
+                  !xhr ||
+                  xhr.status !== 403 ||
+                  (currentUser && currentUser.role === "admin")
+                ) {
+                  deferred.reject(xhr);
+                  return;
+                }
+
+                var promptText = hasAttempted
+                  ? "비밀번호가 틀렸습니다. 다시 입력하세요."
+                  : "비밀 게시판 비밀번호를 입력하세요.";
+                hasAttempted = true;
+
+                var password = prompt(promptText);
+                if (password === null) {
+                  return;
+                }
+
+                if (communityId) {
+                  sessionStorage.setItem(
+                    "community.password." + communityId,
+                    password,
+                  );
+                }
+                attempt();
+              });
+          }
+
+          attempt();
+          return deferred.promise();
+        }
+
+        function fail(xhr) {
+          alert(
+            (xhr && xhr.responseJSON && xhr.responseJSON.message) ||
+              "요청에 실패했습니다.",
+          );
+        }
+
+        function imageUrl(path) {
+          if (/^(https?:\/\/|data:|blob:)/i.test(path)) return path;
+          return (
+            API_BASE_URL.replace(/\/index\.php\/?$/i, "").replace(/\/+$/, "") +
+            "/" +
+            String(path).replace(/^\/+/, "")
+          );
+        }
+
+        function getFileCacheKey(file) {
+          return [
+            file.name || "image",
+            file.size || 0,
+            file.lastModified || 0,
+            file.type || "",
+          ].join("::");
+        }
+
+        function cacheFilePreview(item) {
+          if (!item || item.type !== "file" || !item.file) return;
+          var cacheKey = getFileCacheKey(item.file);
+          if (imageCacheMap[cacheKey]) {
+            item.previewUrl = imageCacheMap[cacheKey];
+            return;
+          }
+
+          var blobUrl = URL.createObjectURL(item.file);
+          imageCacheMap[cacheKey] = blobUrl;
+          item.previewUrl = blobUrl;
+
+          if (typeof FileReader !== "undefined") {
+            var reader = new FileReader();
+            reader.onload = function (ev) {
+              var dataUrl = ev && ev.target && ev.target.result;
+              if (typeof dataUrl === "string" && dataUrl) {
+                imageCacheMap[cacheKey] = dataUrl;
+                item.previewUrl = dataUrl;
+                renderPreview();
+              }
+            };
+            reader.readAsDataURL(item.file);
+          }
+        }
+
+        function makeExistingItem(path, idx) {
+          mediaSeq += 1;
+          var resolved = imageUrl(path);
+          var cacheKey = "existing::" + path;
+          imageCacheMap[cacheKey] = resolved;
+          return {
+            id: "existing_" + mediaSeq,
+            cacheKey: cacheKey,
+            type: "existing",
+            path: path,
+            file: null,
+            label: path.split("/").pop() || "기존 이미지 " + (idx + 1),
+            previewUrl: resolved,
+          };
+        }
+
+        function makeFileItem(file, idx) {
+          mediaSeq += 1;
+          var cacheKey = getFileCacheKey(file);
+          var item = {
+            id: "file_" + mediaSeq,
+            cacheKey: cacheKey,
+            type: "file",
+            path: null,
+            file: file,
+            label: file.name || "새 이미지 " + (idx + 1),
+            previewUrl: imageCacheMap[cacheKey] || "",
+          };
+          cacheFilePreview(item);
+          return item;
+        }
+
+        function setExistingImages(paths) {
+          orderedMediaItems = orderedMediaItems.filter(function (item) {
+            return item.type !== "existing";
+          });
+          var existingList = Array.isArray(paths) ? paths : [];
+          var prepended = existingList.map(function (path, idx) {
+            return makeExistingItem(path, idx);
+          });
+          orderedMediaItems = prepended.concat(orderedMediaItems);
+        }
+
+        function appendSelectedFiles(fileList) {
+          var selectedFiles = Array.from(fileList || []);
+          if (!selectedFiles.length) return;
+
+          selectedFiles.forEach(function (file, idx) {
+            orderedMediaItems.push(makeFileItem(file, idx));
+          });
+
+          // $("#images").val("");
+        }
+
+        function removeMediaItemAt(index) {
+          if (index < 0 || index >= orderedMediaItems.length) return;
+          orderedMediaItems.splice(index, 1);
+          renderPreview();
+        }
+
+        function moveMediaItemToIndex(fromIndex, toIndex) {
+          if (
+            fromIndex < 0 ||
+            fromIndex >= orderedMediaItems.length ||
+            toIndex < 0 ||
+            toIndex >= orderedMediaItems.length ||
+            fromIndex === toIndex
+          ) {
+            return;
+          }
+          var moved = orderedMediaItems.splice(fromIndex, 1)[0];
+          orderedMediaItems.splice(toIndex, 0, moved);
+          renderPreview();
+        }
+
+        function attachDragHandlers($el, index) {
+          $el.attr("draggable", true);
+
+          $el.on("dragstart", function (e) {
+            draggedItemIndex = index;
+            $(this).addClass("opacity-50 ring-2 ring-white/50");
+            if (e.originalEvent && e.originalEvent.dataTransfer) {
+              e.originalEvent.dataTransfer.effectAllowed = "move";
+              e.originalEvent.dataTransfer.setData("text/plain", String(index));
+            }
+          });
+
+          $el.on("dragover", function (e) {
+            e.preventDefault();
+            if (e.originalEvent && e.originalEvent.dataTransfer) {
+              e.originalEvent.dataTransfer.dropEffect = "move";
+            }
+            $(this).addClass("border-sky-400/80 ring-2 ring-sky-400/50");
+          });
+
+          $el.on("dragleave", function () {
+            $(this).removeClass("border-sky-400/80 ring-2 ring-sky-400/50");
+          });
+
+          $el.on("drop", function (e) {
+            e.preventDefault();
+            $(this).removeClass("border-sky-400/80 ring-2 ring-sky-400/50");
+
+            var fromIdx = draggedItemIndex;
+            if (
+              (fromIdx === null || fromIdx === undefined) &&
+              e.originalEvent &&
+              e.originalEvent.dataTransfer
+            ) {
+              var rawIdx = Number(
+                e.originalEvent.dataTransfer.getData("text/plain"),
+              );
+              if (!Number.isNaN(rawIdx)) {
+                fromIdx = rawIdx;
+              }
+            }
+
+            if (
+              fromIdx !== null &&
+              fromIdx !== undefined &&
+              fromIdx !== index
+            ) {
+              moveMediaItemToIndex(fromIdx, index);
+            }
+            draggedItemIndex = null;
+          });
+
+          $el.on("dragend", function () {
+            draggedItemIndex = null;
+            $(this).removeClass(
+              "opacity-50 border-sky-400/80 ring-2 ring-white/50 ring-sky-400/50",
+            );
+          });
+        }
+
+        function renderPreview() {
+          var $preview = $("#preview").empty();
+          orderedMediaItems.forEach(function (item, idx) {
+            var $card = cloneTemplate("#previewItemTemplate");
+            $card.find("[data-preview-img]").attr({
+              src: item.previewUrl,
+              alt: idx + 1 + "번째 이미지 미리보기",
+            });
+            $card.find("[data-preview-index]").text(idx + 1);
+            $card
+              .find("[data-preview-remove]")
+              .attr("aria-label", idx + 1 + "번째 이미지 삭제")
+              .on("mousedown dragstart", function (e) {
+                e.stopPropagation();
+              })
+              .on("click", function (e) {
+                e.stopPropagation();
+                removeMediaItemAt(idx);
+              });
+
+            attachDragHandlers($card, idx);
+            $card.appendTo($preview);
+          });
+        }
+
+        function handleImagesChange() {
+          appendSelectedFiles(this.files);
+          renderPreview();
+        }
+
+        function renderCommunities(rows) {
+          communities = Array.isArray(rows) ? rows : [];
+          var $select = $("#category").empty();
+          communities.forEach(function (item) {
+            $("<option>", {
+              value: item.id,
+              text: (item.is_secret ? "(비밀) " : "") + item.title,
+            }).appendTo($select);
+          });
+          if (communityId) $select.val(String(communityId));
+          if (!communities.length) {
+            $("#submitButton").prop("disabled", true);
+            alert("게시판이 없습니다");
+          }
+        }
+
+        function loadEditor() {
+          var sessionId = localStorage.getItem("SessionId");
+          if (!sessionId) {
+            location.href = "signin.html";
+            return;
+          }
+          request({ url: API_BASE_URL + "/me", type: "GET" })
+            .done(function (res) {
+              currentUser = res && res.body;
+              request({
+                url: API_BASE_URL + "/boards?communityId=0",
+                type: "GET",
+              })
+                .done(function (listRes) {
+                  renderCommunities(
+                    listRes && listRes.body && listRes.body.community,
+                  );
+                  if (editing) loadBoard();
+                })
+                .fail(fail);
+            })
+            .fail(function (xhr) {
+              if (xhr.status === 401) {
+                localStorage.removeItem("SessionId");
+                location.href = "signin.html";
+              } else fail(xhr);
+            });
+        }
+
+        function loadBoard() {
+          if (!boardId) {
+            alert("게시글 ID가 없습니다.");
+            return;
+          }
+          retryOnPassword(function () {
+            return request({
+              url: API_BASE_URL + "/board?id=" + boardId,
+              type: "GET",
+              headers: secretHeaders(),
+            });
+          })
+            .done(function (res) {
+              var board = res && res.body && res.body.board;
+              if (!board) {
+                alert("게시글을 찾을 수 없습니다.");
+                return;
+              }
+              if (
+                currentUser.role !== "admin" &&
+                Number(currentUser.id) !== Number(board.userId)
+              ) {
+                $("#submitButton").prop("disabled", true);
+                alert("작성자만 수정할 수 있습니다.");
+                return;
+              }
+              var matched = communities.find(function (item) {
+                return item.title === (board.type || board.community_type);
+              });
+              communityId = communityId || Number((matched && matched.id) || 0);
+              $("#category").val(String(communityId)).prop("disabled", true);
+              $("#title").val(board.title || "");
+              $("#content").val(board.content || "");
+              setExistingImages(
+                Array.isArray(board.images) ? board.images : [],
+              );
+              renderPreview();
+              $("#cancelLink, #form a[href='index.html']").attr(
+                "href",
+                "board.html?id=" + boardId + "&communityId=" + communityId,
+              );
+            })
+            .fail(fail);
+        }
+
+        $("#images").on("change", handleImagesChange);
+        $("#form").on("submit", function (e) {
+          e.preventDefault();
+          var files = orderedMediaItems
+            .filter(function (item) {
+              return item.type === "file" && item.file;
+            })
+            .map(function (item) {
+              return item.file;
+            });
+
+          if (
+            orderedMediaItems.length > 10 ||
+            files.some(function (file) {
+              return file.size > 1000000;
+            })
+          ) {
+            alert("이미지는 최대 10개, 파일당 1MB까지 가능합니다.");
+            return;
+          }
+          communityId = Number($("#category").val() || communityId);
+          if (!communityId) {
+            alert("게시판을 선택해 주세요.");
+            return;
+          }
+          var body = new FormData();
+          body.append("title", String($("#title").val() || "").trim());
+          body.append("content", String($("#content").val() || "").trim());
+          if (editing) {
+            body.append("_method", "PATCH");
+            orderedMediaItems.forEach(function (item, idx) {
+              if (item.type === "existing") {
+                body.append("order[" + idx + "]", item.path);
+              } else if (item.type === "file" && item.file) {
+                body.append("file[" + idx + "]", item.file);
+              }
+            });
+          } else {
+            body.append("community_id", communityId);
+            orderedMediaItems.forEach(function (item) {
+              if (item.type === "file" && item.file) {
+                body.append("images[]", item.file);
+              }
+            });
+          }
+          var $button = $("#submitButton").prop("disabled", true);
+          retryOnPassword(function () {
+            return request({
+              url:
+                API_BASE_URL +
+                (editing ? "/board?boardId=" + boardId : "/board"),
+              type: "POST",
+              headers: secretHeaders(),
+              data: body,
+              processData: false,
+              contentType: false,
+            });
+          })
+            .done(function (res) {
+              var id = editing
+                ? boardId
+                : Number(res && res.body && res.body.board_id);
+              if (!id) {
+                alert("저장 결과에서 게시글 ID를 찾지 못했습니다.");
+                return;
+              }
+              location.href =
+                "board.html?id=" + id + "&communityId=" + communityId;
+            })
+            .fail(fail)
+            .always(function () {
+              $button.prop("disabled", false);
+            });
+        });
+
+        loadEditor();
+      });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,733 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>EZ LINK</title>
+    <link href="./css/output.css" rel="stylesheet" />
+    <script src="./js/jquery-3.5.1.js"></script>
+    <script src="./js/config.js"></script>
+    <style>
+      input[type="date"] {
+        color-scheme: dark;
+      }
+    </style>
+  </head>
+  <body
+    class="min-w-150 min-h-screen bg-[#0d1011] font-['Noto_Sans_KR',sans-serif] text-white antialiased"
+  >
+    <header
+      class="sticky top-0 z-50 border-t-4 border-[#303335] border-b border-[#2a3033] bg-[#0d1011]/95 backdrop-blur"
+    >
+      <div class="mx-auto flex h-15 max-w-370 items-center gap-3 px-4 sm:px-5">
+        <button
+          id="menuButton"
+          type="button"
+          class="grid size-10 shrink-0 place-items-center rounded-full text-xl hover:bg-[#1e2528] lg:hidden"
+          aria-label="메뉴 열기"
+        >
+          ☰
+        </button>
+        <a href="index.html" class="text-xl font-black">EZ LINK</a>
+        <span
+          class="ml-auto flex items-center gap-2 px-3 py-1 text-sm font-bold text-orange-500"
+        >
+          <img
+            src="css/icon/crown.svg"
+            alt="관리자"
+            class="block size-4 shrink-0 brightness-0 invert"
+          />
+          관리자
+        </span>
+        <a
+          href="index.html"
+          class="text-sm font-bold text-[#9baab1] hover:text-white"
+          >목록으로</a
+        >
+      </div>
+    </header>
+
+    <!-- 사이드바 배경 오버레이 -->
+    <div
+      id="sidebarBackdrop"
+      class="fixed inset-0 z-30 hidden bg-black/60 lg:hidden"
+    ></div>
+
+    <div
+      class="mx-auto grid max-w-370 grid-cols-[240px_minmax(0,1fr)] gap-8 px-5 py-8 max-lg:block max-lg:px-4"
+    >
+      <!-- 왼쪽 사이드바 메뉴 -->
+      <aside
+        id="adminSidebar"
+        class="sticky top-22 h-fit p-3 max-lg:fixed max-lg:top-15 max-lg:bottom-0 max-lg:left-0 max-lg:z-40 max-lg:w-68 max-lg:-translate-x-full max-lg:rounded-none max-lg:border-y-0 max-lg:border-l-0 max-lg:border-r max-lg:border-[#252b2e] max-lg:bg-[#101415] max-lg:transition-transform max-lg:[&.open]:translate-x-0"
+      >
+        <p class="px-3 py-2 text-xs font-black tracking-wider text-[#8ea0a9]">
+          관리자 메뉴
+        </p>
+        <nav id="adminNav" class="mt-1 grid gap-1" aria-label="관리자 메뉴">
+          <button
+            type="button"
+            data-tab="create"
+            class="admin-nav-btn flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-3 text-left text-sm font-bold transition hover:bg-[#1d2427]"
+          >
+            <span>커뮤니티 생성</span>
+          </button>
+          <button
+            type="button"
+            data-tab="communities"
+            class="admin-nav-btn flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-3 text-left text-sm font-bold transition hover:bg-[#1d2427]"
+          >
+            <span>게시판 목록</span>
+            <span
+              board-count
+              class="px-2 py-0.5 text-xs font-bold text-[#cbd5d9]"
+              >0</span
+            >
+          </button>
+          <button
+            type="button"
+            data-tab="reports"
+            class="admin-nav-btn flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-3 text-left text-sm font-bold transition hover:bg-[#1d2427]"
+          >
+            <span>신고 관리</span>
+            <span
+              report-count
+              class="px-2 py-0.5 text-xs font-bold text-rose-300"
+              >0</span
+            >
+          </button>
+          <button
+            type="button"
+            data-tab="download"
+            class="admin-nav-btn flex w-full cursor-pointer items-center justify-between rounded-xl px-3.5 py-3 text-left text-sm font-bold transition hover:bg-[#1d2427]"
+          >
+            <span>게시글 XLSX 다운로드</span>
+          </button>
+        </nav>
+      </aside>
+
+      <!-- 우측 콘텐츠 영역 -->
+      <main class="min-w-0">
+        <div class="mb-6 border-b border-[#2a3033] pb-4">
+          <h1 class="text-2xl font-black">관리자 페이지</h1>
+          <p id="message" class="hidden" role="alert"></p>
+        </div>
+
+        <!--커뮤니티 생성 -->
+        <section data-panel="create" class="admin-panel max-w-xl">
+          <form id="createCommunity" class="grid gap-4">
+            <h2 class="text-lg font-black">커뮤니티 생성</h2>
+            <label class="grid gap-2 text-sm font-bold"
+              >제목<input
+                name="title"
+                required
+                maxlength="50"
+                placeholder="게시판 이름을 입력하세요"
+                class="rounded-xl border border-[#252c2f] bg-[#0d1011] p-3 focus:border-[#46545a] focus:outline-none"
+            /></label>
+            <div class="flex gap-4">
+              <label class="w-20 grid gap-2 text-sm font-bold"
+                >색상<input
+                  name="color_type"
+                  type="color"
+                  value="#273033"
+                  class="h-11 w-full cursor-pointer border border-[#252c2f]"
+              /></label>
+              <label class="flex-1 grid gap-2 text-sm font-bold"
+                >비밀번호 (선택)<input
+                  name="password"
+                  type="password"
+                  autocomplete="new-password"
+                  placeholder="비밀번호 입력 시 비밀 게시판으로 생성됩니다"
+                  class="rounded-xl border border-[#252c2f] bg-[#0d1011] p-3 focus:border-[#46545a] focus:outline-none"
+              /></label>
+            </div>
+            <p class="text-sm text-[#9baab1]">
+              비밀번호를 입력하면 비밀 게시판이 됩니다.
+            </p>
+            <button
+              type="submit"
+              class="mt-1 cursor-pointer rounded-full bg-white px-5 py-2.5 font-black text-[#101314] transition hover:bg-slate-200"
+            >
+              생성하기
+            </button>
+          </form>
+        </section>
+
+        <!-- 게시판 목록 -->
+        <section data-panel="communities" class="admin-panel hidden min-w-0">
+          <div class="flex-col items-center">
+            <h2 class="text-lg font-black">게시판 목록</h2>
+            <div
+              class="flex mt-6 items-center gap-1 text-xs font-black text-[#9baab1]"
+            >
+              <span>전체 :</span>
+              <span board-count class="text-white">0</span>
+            </div>
+          </div>
+          <div
+            class="mt-4 overflow-x-auto border border-[#252c2f] bg-[#13181a]"
+          >
+            <div class="min-w-[540px]">
+              <div
+                class="grid grid-cols-[1.5fr_72px_130px_110px_80px_90px] items-center gap-4 border-b border-[#252c2f] bg-[#171d20] px-4 py-2.5 text-xs font-bold text-[#8ea0a9]"
+              >
+                <span>게시판명</span>
+                <span class="text-center">구분</span>
+                <span class="text-center">생성날짜</span>
+                <span class="text-center">색코드</span>
+                <span class="text-center">게시글 수</span>
+                <span class="text-center">삭제</span>
+              </div>
+              <div id="communityList" class="divide-y divide-[#202527]"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 신고 관리 -->
+        <section data-panel="reports" class="admin-panel hidden min-w-0">
+          <h2 class="text-lg font-black">신고 관리</h2>
+
+          <form
+            id="reportFilter"
+            class="my-4 flex flex-wrap items-center gap-3"
+          >
+            <label class="text-sm font-bold"
+              >신고 수 초과
+              <input
+                id="minCount"
+                type="number"
+                min="0"
+                value="0"
+                class="ml-2 w-20 border border-[#252c2f] bg-[#13181a] p-2"
+            /></label>
+            <button
+              type="submit"
+              class="cursor-pointer rounded-xl px-4 py-2 text-sm font-bold transition hover:bg-[#1e2528]"
+            >
+              조회
+            </button>
+          </form>
+          <div
+            class="flex mt-6 items-center gap-1 text-xs font-black text-[#9baab1]"
+          >
+            <span>전체 :</span>
+            <span report-count class="text-white">0</span>
+          </div>
+          <div
+            class="mt-4 overflow-x-auto border border-[#252c2f] bg-[#13181a]"
+          >
+            <div class="min-w-[540px]">
+              <div
+                class="grid grid-cols-[1.5fr_72px_150px_80px_90px] items-center gap-4 border-b border-[#252c2f] bg-[#171d20] px-4 py-2.5 text-xs font-bold text-[#8ea0a9]"
+              >
+                <span>게시글</span>
+                <span class="text-center">신고 수</span>
+                <span class="text-center">작성자</span>
+                <span class="text-center">반려</span>
+                <span class="text-center">게시글 삭제</span>
+              </div>
+              <div id="reports" class="divide-y divide-[#202527]"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 게시글 XLSX 다운로드 -->
+        <section data-panel="download" class="admin-panel hidden max-w-xl">
+          <form id="downloadForm" class="grid gap-4">
+            <h2 class="text-lg font-black">게시글 XLSX 다운로드</h2>
+            <div class="flex flex-wrap items-center gap-2 text-xs font-bold">
+              <button
+                type="button"
+                data-range="today"
+                class="date-preset cursor-pointer rounded-lg border border-[#252c2f] bg-[#13181a] px-3 py-1.5 text-[#cbd5d9] transition hover:bg-[#1d2427] hover:text-white"
+              >
+                오늘
+              </button>
+              <button
+                type="button"
+                data-range="7d"
+                class="date-preset cursor-pointer rounded-lg border border-[#252c2f] bg-[#13181a] px-3 py-1.5 text-[#cbd5d9] transition hover:bg-[#1d2427] hover:text-white"
+              >
+                최근 7일
+              </button>
+              <button
+                type="button"
+                data-range="month"
+                class="date-preset cursor-pointer rounded-lg border border-[#252c2f] bg-[#13181a] px-3 py-1.5 text-[#cbd5d9] transition hover:bg-[#1d2427] hover:text-white"
+              >
+                이번 달
+              </button>
+            </div>
+            <div class="grid gap-4 sm:grid-cols-2">
+              <label class="grid gap-2 text-sm font-bold"
+                >시작일<input
+                  id="downloadStartDate"
+                  name="startDate"
+                  type="date"
+                  required
+                  class="cursor-pointer rounded-xl border border-[#252c2f] bg-[#0d1011] p-2.5 focus:border-[#46545a] focus:outline-none"
+              /></label>
+              <label class="grid gap-2 text-sm font-bold"
+                >종료일<input
+                  id="downloadEndDate"
+                  name="endDate"
+                  type="date"
+                  required
+                  class="cursor-pointer rounded-xl border border-[#252c2f] bg-[#0d1011] p-2.5 focus:border-[#46545a] focus:outline-none"
+              /></label>
+            </div>
+            <button
+              type="submit"
+              class="mt-1 cursor-pointer rounded-full bg-white px-5 py-2.5 font-black text-[#101314] transition hover:bg-slate-200"
+            >
+              다운로드
+            </button>
+          </form>
+        </section>
+      </main>
+    </div>
+
+    <template id="communityItemTemplate">
+      <article
+        class="grid grid-cols-[1.5fr_72px_130px_110px_80px_90px] items-center gap-4 px-4 py-3 text-sm font-bold"
+      >
+        <a
+          data-community-title
+          href
+          class="min-w-0 truncate text-white hover:underline"
+        ></a>
+        <span
+          data-secret
+          class="whitespace-nowrap text-center text-xs font-bold text-[#cbd5d9]"
+        >
+          일반
+        </span>
+        <span
+          data-created-at
+          class="whitespace-nowrap text-center text-xs font-normal text-[#9baab1]"
+        >
+          -
+        </span>
+        <span
+          data-color-code
+          class="flex items-center justify-center gap-1.5 whitespace-nowrap font-mono text-xs font-normal text-[#cbd5d9]"
+        >
+          <span
+            data-color-swatch
+            class="inline-block size-3 shrink-0 rounded-full border border-white/15"
+          ></span>
+          <span data-color-text>-</span>
+        </span>
+        <span
+          data-board-count
+          class="whitespace-nowrap text-center font-semibold text-white"
+        >
+          0
+        </span>
+        <button
+          data-action="delete"
+          type="button"
+          class="cursor-pointer rounded-full px-3 py-1.5 text-xs font-bold text-rose-300 transition hover:bg-[#262f33]"
+        >
+          삭제
+        </button>
+      </article>
+    </template>
+
+    <template id="reportTemplate">
+      <article
+        class="grid grid-cols-[1.5fr_72px_150px_80px_90px] items-center gap-4 px-4 py-3 text-xs font-bold text-[#8ea0a9] transition hover:bg-[#1c2326]"
+      >
+        <a
+          data-report-link
+          class="min-w-0 truncate text-sm font-bold text-white hover:underline"
+        ></a>
+        <p data-report-conut class="text-center text-[#9baab1]"></p>
+        <p data-report-writer class="truncate text-center text-[#9baab1]"></p>
+        <button
+          data-action="reject"
+          type="button"
+          class="cursor-pointer rounded-full px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#262f33]"
+        >
+          반려
+        </button>
+        <button
+          data-action="approve"
+          type="button"
+          class="cursor-pointer rounded-full px-3 py-1.5 text-xs font-bold text-rose-300 transition hover:bg-[#262f33]"
+        >
+          삭제
+        </button>
+      </article>
+    </template>
+
+    <script>
+      var API_BASE_URL =
+        window.LOCAL_API_URL || "https://dev01.ezapps.co.kr/index.php";
+
+      $(function () {
+        var VALID_TABS = ["create", "communities", "reports", "download"];
+
+        function headers() {
+          return { Authorization: localStorage.getItem("SessionId") || "" };
+        }
+
+        function cloneTemplate(selector) {
+          return $($("#" + selector)[0].content)
+            .children()
+            .first()
+            .clone();
+        }
+
+        function fail(xhr) {
+          alert(
+            (xhr.responseJSON && xhr.responseJSON.message) ||
+              "요청에 실패했습니다.",
+          );
+        }
+
+        function closeMobileSidebar() {
+          $("#adminSidebar").removeClass("open");
+          $("#sidebarBackdrop").addClass("hidden");
+        }
+
+        function getTabFromQuery() {
+          var params = new URLSearchParams(location.search);
+          var queryTab = params.get("tab");
+          if (VALID_TABS.includes(queryTab)) {
+            return queryTab;
+          }
+          var hashTab = location.hash.replace(/^#/, "");
+          if (VALID_TABS.includes(hashTab)) {
+            return hashTab;
+          }
+          return "create";
+        }
+
+        function updateQueryTab(tabName) {
+          var params = new URLSearchParams(location.search);
+          params.set("tab", tabName);
+          var nextQuery = params.toString();
+          var nextUrl = location.pathname + (nextQuery ? "?" + nextQuery : "");
+          if (location.pathname + location.search !== nextUrl) {
+            history.replaceState(null, "", nextUrl);
+          }
+        }
+
+        function switchTab(tabName) {
+          var target = VALID_TABS.includes(tabName) ? tabName : "create";
+
+          $(".admin-panel").addClass("hidden");
+          $('[data-panel="' + target + '"]').removeClass("hidden");
+
+          $(".admin-nav-btn")
+            .removeClass("bg-[#22282a] text-white")
+            .addClass("text-[#cbd5d9]");
+          $('[data-tab="' + target + '"]')
+            .removeClass("text-[#cbd5d9]")
+            .addClass("bg-[#22282a] text-white");
+
+          updateQueryTab(target);
+          closeMobileSidebar();
+        }
+
+        function formatDateInput(date) {
+          var year = date.getFullYear();
+          var month = String(date.getMonth() + 1).padStart(2, "0");
+          var day = String(date.getDate()).padStart(2, "0");
+          return year + "-" + month + "-" + day;
+        }
+
+        function openNativeDatePicker(inputEl) {
+          if (!inputEl || inputEl.disabled) return;
+          if (typeof inputEl.showPicker === "function") {
+            try {
+              inputEl.showPicker();
+            } catch (err) {
+              //  호출 시 무시
+            }
+          }
+        }
+
+        $("#downloadStartDate, #downloadEndDate").on("click", function () {
+          openNativeDatePicker(this);
+        });
+
+        $(".date-preset").on("click", function () {
+          var range = $(this).data("range");
+          var now = new Date();
+          var endStr = formatDateInput(now);
+          var startDate = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+          );
+
+          if (range === "7d") {
+            startDate.setDate(startDate.getDate() - 6);
+          } else if (range === "month") {
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          }
+
+          $("#downloadStartDate").val(formatDateInput(startDate));
+          $("#downloadEndDate").val(endStr);
+        });
+
+        $(".admin-nav-btn").on("click", function () {
+          switchTab($(this).data("tab"));
+        });
+
+        $("#menuButton").on("click", function () {
+          var isOpen = $("#adminSidebar").toggleClass("open").hasClass("open");
+          $("#sidebarBackdrop").toggleClass("hidden", !isOpen);
+        });
+
+        $("#sidebarBackdrop").on("click", closeMobileSidebar);
+
+        $(window).on("popstate", function () {
+          switchTab(getTabFromQuery());
+        });
+
+        function loadCommunities() {
+          $.ajax({
+            url: API_BASE_URL + "/admin/community",
+            type: "GET",
+            headers: headers(),
+            dataType: "json",
+          })
+            .done(function (res) {
+              var $list = $("#communityList").empty();
+              var rows = Array.isArray(res.body) ? res.body : [];
+              $("[board-count]").text(rows.length);
+
+              if (!rows.length) {
+                $list.append(
+                  $("<div>")
+                    .addClass("px-4 py-6 text-center text-sm text-[#9baab1]")
+                    .text("등록된 게시판이 없습니다."),
+                );
+                return;
+              }
+
+              rows.forEach(function (item) {
+                var $item = cloneTemplate("communityItemTemplate");
+                var rawColor = item.colorCode;
+                var createdDate = item.created_at;
+                var boardCount = item.board_count ?? 0;
+
+                $item
+                  .find("[data-community-title]")
+                  .attr("href", "index.html?communityId=" + Number(item.id));
+                $item.find("[data-community-title]").text(item.title || "");
+
+                if (item.is_secret) {
+                  $item
+                    .find("[data-secret]")
+                    .text("비밀")
+                    .removeClass("text-[#cbd5d9]")
+                    .addClass("text-amber-300");
+                }
+
+                $item.find("[data-created-at]").text(createdDate || "-");
+
+                if (rawColor) {
+                  $item
+                    .find("[data-color-swatch]")
+                    .css("background-color", rawColor);
+                  $item.find("[data-color-text]").text(rawColor);
+                } else {
+                  $item.find("[data-color-swatch]").hide();
+                  $item.find("[data-color-text]").text("-");
+                }
+
+                $item.find("[data-board-count]").text(Number(boardCount));
+
+                $item.find('[data-action="delete"]').on("click", function () {
+                  var communityTitle = item.title || "해당 게시판";
+
+                  $.ajax({
+                    url:
+                      API_BASE_URL +
+                      "/admin/community?boardId=" +
+                      encodeURIComponent(Number(item.id)),
+                    type: "DELETE",
+                    headers: headers(),
+                    dataType: "json",
+                  })
+                    .done(function (deleteRes) {
+                      alert((deleteRes && deleteRes.message) || "삭제 완료");
+                      loadCommunities();
+                    })
+                    .fail(fail);
+                });
+
+                $list.append($item);
+              });
+            })
+            .fail(fail);
+        }
+
+        function loadReports() {
+          $.ajax({
+            url:
+              API_BASE_URL +
+              "/admin/report?minCount=" +
+              encodeURIComponent($("#minCount").val()),
+            type: "GET",
+            headers: headers(),
+            dataType: "json",
+          })
+            .done(function (res) {
+              var $list = $("#reports").empty();
+              var rows = Array.isArray(res.body) ? res.body : [];
+              if (!rows.length) {
+                $list.append(
+                  $("<div>")
+                    .addClass("px-4 py-6 text-center text-sm text-[#9baab1]")
+                    .text("처리할 신고가 없습니다."),
+                );
+                $("[report-count]").text(0);
+                return;
+              }
+
+              $("[report-count]").text(rows.length);
+              rows.forEach(function (item) {
+                var $card = cloneTemplate("reportTemplate");
+                $card
+                  .find("[data-report-link]")
+                  .attr(
+                    "href",
+                    "board.html?id=" +
+                      Number(item.id) +
+                      "&communityId=" +
+                      Number(item.communityId),
+                  )
+                  .text(item.title || "제목 없음");
+
+                $card
+                  .find("[data-report-writer]")
+                  .text(item.authorEmail || "익명");
+                $card
+                  .find("[data-report-conut]")
+                  .text(Number(item.reportCount || 0));
+
+                $card.find("[data-action]").on("click", function () {
+                  var action = $(this).data("action");
+                  $.ajax({
+                    url:
+                      API_BASE_URL +
+                      "/admin/report?boardId=" +
+                      Number(item.id) +
+                      "&action=" +
+                      action,
+                    type: "POST",
+                    headers: headers(),
+                    data: { _method: "PATCH" },
+                    dataType: "json",
+                  })
+                    .done(function () {
+                      loadReports();
+                      alert("작업완료");
+                    })
+                    .fail(fail);
+                });
+                $list.append($card);
+              });
+            })
+            .fail(fail);
+        }
+
+        $("#createCommunity").on("submit", function (e) {
+          e.preventDefault();
+          var form = this;
+          $.ajax({
+            url: API_BASE_URL + "/admin/community",
+            type: "POST",
+            headers: headers(),
+            data: new FormData(form),
+            processData: false,
+            contentType: false,
+            dataType: "json",
+          })
+            .done(function () {
+              form.reset();
+              alert("게시판이 생성되었습니다.");
+              loadCommunities();
+              switchTab("communities");
+            })
+            .fail(fail);
+        });
+
+        $("#reportFilter").on("submit", function (e) {
+          e.preventDefault();
+          loadReports();
+        });
+
+        $("#downloadForm").on("submit", function (e) {
+          e.preventDefault();
+          var dates = new FormData(this);
+          if (dates.get("startDate") > dates.get("endDate")) {
+            alert("기간을 확인해 주세요.");
+            return;
+          }
+
+          $.ajax({
+            url: API_BASE_URL + "/board/download?" + new URLSearchParams(dates),
+            type: "GET",
+            headers: headers(),
+            xhrFields: {
+              responseType: "blob",
+            },
+          })
+            .done(function (blob) {
+              var url = URL.createObjectURL(blob);
+              var link = document.createElement("a");
+              link.href = url;
+              const today = new Date().toLocaleDateString("sv-SE");
+              link.download = `community-${today}.xlsx`;
+              link.click();
+              setTimeout(function () {
+                URL.revokeObjectURL(url);
+              }, 1000);
+            })
+            .fail(function (xhr) {
+              if (xhr.status === 404) {
+                alert("게시글이 없습니다.");
+                return;
+              }
+              // console.log(xhr);
+              alert(
+                (xhr.responseJSON && xhr.responseJSON.message) ||
+                  "다운로드에 실패했습니다.",
+              );
+            });
+        });
+
+        // 초기 설정 (
+        switchTab(getTabFromQuery());
+
+        if (!headers().Authorization) {
+          location.href = "signin.html";
+          return;
+        }
+        $.ajax({
+          url: API_BASE_URL + "/me",
+          type: "GET",
+          headers: headers(),
+          dataType: "json",
+        })
+          .done(function (res) {
+            if (!res.body || res.body.role !== "admin") {
+              $("main form").find("button").prop("disabled", true);
+              alert("관리자만 접근할 수 있습니다.");
+              return;
+            }
+            loadCommunities();
+            loadReports();
+          })
+          .fail(fail);
+      });
+    </script>
+  </body>
+</html>

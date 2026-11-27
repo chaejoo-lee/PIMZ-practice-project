@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>EZ LINK</title>
+    <script src="./js/jquery-3.5.1.js"></script>
+    <script src="./js/config.js"></script>
+    <link href="./css/output.css" rel="stylesheet" />
+  </head>
+  <body
+    class="grid min-h-screen place-items-center bg-[#0d1011] p-5 font-['Noto_Sans_KR',sans-serif] text-white antialiased"
+  >
+    <main class="w-full max-w-md">
+      <a
+        href="index.html"
+        class="mx-auto mb-8 flex w-fit items-center gap-3 text-xl font-black"
+      >
+        EZ LINK</a
+      >
+      <section class="rounded-xl border border-[#252c2f] bg-[#13181a] p-7">
+        <p class="text-sm font-bold text-[#9baab1]">다시 만나 반가워요</p>
+        <h1 class="mt-1 text-2xl font-black sm:text-3xl">로그인</h1>
+        <p class="mt-2 text-sm text-[#8ea0a9]">이야기를 이어서 나눠보세요.</p>
+        <form id="form" class="mt-7 grid gap-4">
+          <label class="grid gap-2 text-sm font-bold"
+            >이메일<input
+              id="email"
+              type="email"
+              required
+              autocomplete="email"
+              class="rounded-xl border border-[#252c2f] bg-[#0d1011] p-3 focus:border-[#46545a] focus:outline-none"
+            />
+          </label>
+          <label class="grid gap-2 text-sm font-bold"
+            >비밀번호<input
+              id="password"
+              type="password"
+              required
+              autocomplete="current-password"
+              class="rounded-xl border border-[#252c2f] bg-[#0d1011] p-3 focus:border-[#46545a] focus:outline-none"
+            />
+          </label>
+          <p id="message" class="hidden" role="alert"></p>
+          <button
+            type="submit"
+            class="mt-2 cursor-pointer rounded-full bg-white py-3 font-black text-[#101314] transition hover:bg-slate-200 disabled:opacity-50"
+          >
+            로그인
+          </button>
+        </form>
+        <p class="mt-6 text-center text-sm text-[#8ea0a9]">
+          처음 오셨나요?
+          <a href="signup.html" class="ml-2 font-black text-white underline"
+            >회원가입</a
+          >
+        </p>
+      </section>
+    </main>
+
+    <script>
+      var API_BASE_URL =
+        window.LOCAL_API_URL || "https://dev01.ezapps.co.kr/index.php";
+
+      $(function () {
+        // 알림 메시지 출력 함수
+        function showMessage(text, isError) {
+          var colorClass = isError
+            ? "bg-red-950 text-red-200"
+            : "bg-emerald-950 text-emerald-200";
+
+          $("#message")
+            .text(text)
+            .attr("class", "my-4 rounded-xl p-3 text-sm " + colorClass)
+            .removeClass("hidden");
+        }
+
+        // 로그인 폼 전송 이벤트
+        $("#form").on("submit", function (e) {
+          e.preventDefault();
+
+          var $btn = $(this).find("button");
+          var formData = new FormData();
+          formData.append("email", $("#email").val());
+          formData.append("password", $("#password").val());
+
+          $btn.prop("disabled", true);
+
+          $.ajax({
+            url: `${API_BASE_URL}/signin`,
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            dataType: "json",
+          })
+            .done(function (res) {
+              localStorage.setItem("SessionId", res.body);
+              sessionStorage.clear();
+              location.href = "index.html";
+            })
+            .fail(function (xhr) {
+              var errMsg = "서버 응답을 확인할 수 없습니다.";
+              if (xhr.responseJSON && xhr.responseJSON.message) {
+                errMsg = xhr.responseJSON.message;
+              }
+              showMessage(errMsg, true);
+            })
+            .always(function () {
+              $btn.prop("disabled", false);
+            });
+        });
+      });
+    </script>
+  </body>
+</html>

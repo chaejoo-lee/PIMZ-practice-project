@@ -1,0 +1,1096 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <title>EZ LINK</title>
+    <script src="./js/jquery-3.5.1.js"></script>
+    <script src="./js/config.js"></script>
+    <link href="./css/output.css" rel="stylesheet" />
+  </head>
+  <body
+    class="min-w-150 min-h-screen bg-[#0d1011] font-['Noto_Sans_KR',sans-serif] text-white antialiased"
+  >
+    <header
+      class="fixed min-w-150 inset-x-0 top-0 z-50 h-16 border-t-4 border-[#303335] border-b border-[#2a3033] bg-[#0d1011]/95 backdrop-blur"
+    >
+      <div
+        class="mx-auto flex h-15 max-w-370 items-center gap-3 px-4 sm:gap-4 sm:px-5"
+      >
+        <button
+          id="menuButton"
+          class="grid size-10 shrink-0 place-items-center rounded-full text-xl lg:hidden cursor-pointer"
+          aria-label="메뉴 열기"
+        >
+          <img
+            src="./css/icon/list.svg"
+            class="block size-4 shrink-0 brightness-0 invert"
+          />
+        </button>
+        <a
+          href="index.html"
+          class="flex shrink-0 items-center gap-2.5 whitespace-nowrap text-xl font-black tracking-[-.05em]"
+        >
+          <span class="hidden text-xl font-black md:inline lg:mr-32"
+            >EZ LINK</span
+          >
+        </a>
+        <form
+          id="searchForm"
+          class="relative flex min-w-0 flex-1 max-w-250 items-center"
+        >
+          <input
+            id="search"
+            name="search"
+            class="h-11 w-full min-w-0 rounded-full bg-[#252d30] pl-5 pr-14 text-white outline-none focus:ring-1 focus:ring-[#60737c]"
+            type="search"
+            placeholder="게시글 검색"
+          />
+          <button
+            type="submit"
+            class="absolute right-3 shrink-0 whitespace-nowrap text-sm font-bold text-[#b5c2c8]"
+          >
+            검색
+          </button>
+        </form>
+        <a
+          id="writeLink"
+          href="write.html"
+          class="shrink-0 whitespace-nowrap rounded-full bg-white px-4 py-2.5 text-sm font-black text-[#101314]"
+          >글쓰기</a
+        >
+        <a
+          href="signin.html"
+          data-auth-link="signin"
+          class="shrink-0 whitespace-nowrap rounded-full px-3 py-2 text-sm font-bold text-[#cbd5d9] hover:bg-[#242a2c]"
+          >로그인</a
+        >
+      </div>
+    </header>
+
+    <div
+      class="mx-auto grid max-w-360 grid-cols-[minmax(220px,1fr)_minmax(0,780px)_minmax(240px,1fr)] gap-8 px-5 pt-23 pb-20 max-lg:block max-lg:px-4"
+    >
+      <aside
+        id="sidebar"
+        class="sticky top-22 h-fit p-3 max-lg:fixed max-lg:top-16.25 max-lg:bottom-0 max-lg:left-0 max-lg:z-40 max-lg:w-72 max-lg:-translate-x-full max-lg:overflow-y-auto max-lg:border-r max-lg:border-[#252b2e] max-lg:bg-[#101415] max-lg:[&.open]:translate-x-0"
+      >
+        <p class="shrink-0 px-3 py-2 font-black text-white">게시판</p>
+
+        <!-- 커뮤니티 검색 영역 -->
+        <div class="relative mb-2.5 shrink-0 px-1">
+          <input
+            id="boardSearch"
+            type="search"
+            placeholder="게시판 검색..."
+            aria-label="게시판 검색"
+            class="h-9 w-full rounded-xl bg-[#1a2023] pl-3 pr-8 text-xs text-white placeholder-[#7f9199] outline-none ring-1 ring-[#273033] transition focus:ring-[#60737c]"
+          />
+          <button
+            id="clearBoardSearchBtn"
+            type="button"
+            aria-label="게시판 검색어 지우기"
+            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-xs font-bold text-[#8ea0a9] hover:text-white"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- 일반 게시판 스크롤 목록 -->
+        <nav
+          id="nomalBoards"
+          class="grid min-h-0 flex-1 content-start gap-1 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#2c3539] hover:[&::-webkit-scrollbar-thumb]:bg-[#3d494f]"
+        ></nav>
+        <p class="mt-4 shrink-0 px-3 py-2 font-black text-white">비밀 게시판</p>
+        <!-- 비밀 게시판 스크롤 목록 -->
+        <nav
+          id="boards"
+          class="grid min-h-0 flex-1 content-start gap-1 overflow-y-auto pr-1 [&::-webkit-scrollbar]:w-[6px] [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#2c3539] hover:[&::-webkit-scrollbar-thumb]:bg-[#3d494f]"
+        ></nav>
+      </aside>
+
+      <main class="min-w-0">
+        <div
+          class="mb-14 flex items-center justify-between gap-3 border-b border-[#2a3033] py-5"
+        >
+          <div class="flex min-w-0 flex-1 items-center gap-2">
+            <span id="communityTitleSecret" class="hidden shrink-0">
+              <img
+                src="css/icon/lock.svg"
+                alt="비밀 게시판"
+                class="block size-5 shrink-0 brightness-0 invert"
+              />
+            </span>
+            <h1 id="communityTitle" class="truncate text-2xl font-black">
+              전체
+            </h1>
+          </div>
+          <div class="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              data-sort="latest"
+              class="sort shrink-0 whitespace-nowrap rounded-full bg-[#242a2d] px-3 py-1.5 text-sm font-bold"
+            >
+              최신순
+            </button>
+            <button
+              type="button"
+              data-sort="popular"
+              class="sort shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-bold text-[#8ea0a8]"
+            >
+              인기순
+            </button>
+            <button
+              type="button"
+              data-sort="comments"
+              class="sort shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-bold text-[#8ea0a8]"
+            >
+              댓글순
+            </button>
+          </div>
+        </div>
+        <section id="posts" class="grid gap-3" aria-live="polite"></section>
+      </main>
+
+      <div class="sticky top-24 h-fit p-5 max-lg:hidden">
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="whitespace-nowrap font-black">히스토리</h2>
+          <button
+            id="clearHistoryBtn"
+            type="button"
+            class="shrink-0 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-bold text-[#8ea0a9] transition hover:bg-[#171c1e] hover:text-white"
+          >
+            전체 삭제
+          </button>
+        </div>
+        <div id="userHistory" class="mt-3 grid gap-2.5"></div>
+      </div>
+    </div>
+
+    <!-- 회원정보 -->
+    <template id="headerLoggedInTemplate">
+      <span
+        data-dynamic-auth="email"
+        class="max-w-40 shrink-0 truncate text-sm text-slate-400 max-md:hidden"
+      ></span>
+      <a
+        data-dynamic-auth="admin"
+        href="admin.html"
+        class="hidden shrink-0 items-center gap-1 whitespace-nowrap"
+      >
+        <img
+          src="css/icon/crown.svg"
+          alt="관리자"
+          class="block size-4 shrink-0 brightness-0 invert"
+        />
+        <span class="whitespace-nowrap text-sm font-bold text-orange-500">
+          관리자
+        </span>
+      </a>
+      <button
+        data-dynamic-auth="logout"
+        type="button"
+        class="shrink-0 whitespace-nowrap text-sm text-slate-400 hover:text-white"
+      >
+        로그아웃
+      </button>
+    </template>
+
+    <template id="userActionsLoggedInTemplate">
+      <button
+        type="button"
+        data-action="logout"
+        class="whitespace-nowrap rounded-lg bg-[#242a2d] px-3 py-2 text-center font-bold text-white hover:bg-[#2f373b]"
+      >
+        로그아웃
+      </button>
+    </template>
+
+    <template id="userActionsGuestTemplate">
+      <a
+        href="signin.html"
+        class="whitespace-nowrap rounded-lg bg-[#242a2d] px-3 py-2 text-center font-bold text-white hover:bg-[#2f373b]"
+      >
+        로그인
+      </a>
+      <a
+        href="signup.html"
+        class="whitespace-nowrap rounded-lg bg-white px-3 py-2 text-center font-bold text-[#101314] hover:bg-slate-200"
+      >
+        회원가입
+      </a>
+    </template>
+
+    <!-- 히스토리탬플릿 -->
+    <template id="historyEmptyTemplate">
+      <p data-history-empty class="text-xs text-[#8ea0a9]"></p>
+    </template>
+
+    <template id="historyCardTemplate">
+      <div class="border-b-2 border-[#202527] py-2">
+        <a
+          data-history-link
+          class="block rounded-xl py-2 p-3 transition hover:border-[#343e43] hover:bg-mist-800"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span
+              data-history-community
+              class="inline-block rounded-md bg-[#222a2e] px-2 py-0.5 text-[11px] font-bold text-white"
+            ></span>
+          </div>
+          <p
+            data-history-title
+            class="mt-1.5 line-clamp-1 text-sm font-bold text-white"
+          ></p>
+          <p
+            data-history-summary
+            class="mt-1 truncate text-xs text-[#9baab1]"
+          ></p>
+        </a>
+      </div>
+    </template>
+
+    <!-- 게시판 목록 템플릿 -->
+    <template id="boardItemTemplate">
+      <button
+        type="button"
+        data-board-btn
+        class="flex w-full items-center gap-1.5 rounded-xl px-3 py-3 text-left text-sm font-bold hover:bg-mist-600/20"
+      >
+        <span data-secret class="hidden shrink-0">
+          <img
+            src="css/icon/lock.svg"
+            alt="비밀 게시판"
+            class="block size-4 shrink-0 brightness-0 invert"
+          />
+        </span>
+        <span data-title class="min-w-0 truncate"></span>
+      </button>
+    </template>
+
+    <!-- 게시글 템플릿 -->
+    <template id="postTemplate">
+      <article class="min-w-0 border-b border-b-mist-500">
+        <div
+          class="min-w-0 rounded-2xl p-5 transition-colors hover:bg-mist-600/20"
+        >
+          <div class="mb-3 flex items-center justify-between gap-2 text-sm">
+            <div class="flex min-w-0 items-center gap-2">
+              <span data-author class="truncate"> </span> •
+              <span
+                data-secret
+                class="hidden shrink-0 text-xs font-bold text-amber-300"
+              >
+              </span>
+              <span data-date class="shrink-0 whitespace-nowrap text-[#7f9199]">
+              </span>
+            </div>
+            <span
+              data-category
+              class="shrink-0 whitespace-nowrap rounded-full bg-[#273033] px-2.5 py-1 font-bold text-white"
+            >
+              커뮤니티
+            </span>
+          </div>
+          <a data-link class="block min-w-0">
+            <h2 data-title class="break-words text-xl font-black"></h2>
+            <p
+              data-excerpt
+              class="mt-2 line-clamp-2 break-words leading-7 text-[#aebbc0]"
+            ></p>
+            <img
+              data-image
+              class="mt-4 max-h-105 w-full rounded-2xl bg-mist-800 object-contain object-center"
+              alt="게시글 이미지"
+            />
+          </a>
+          <div class="mt-4 flex gap-4 text-sm font-bold text-[#91a1a8]">
+            <span data-votes class="whitespace-nowrap"> </span>
+            <span data-comments class="whitespace-nowrap"> </span>
+          </div>
+        </div>
+      </article>
+    </template>
+
+    <script>
+      var API_BASE_URL =
+        window.LOCAL_API_URL || "https://dev01.ezapps.co.kr/index.php";
+      var HISTORY_STORAGE_KEY = "community.visitHistory.";
+      var MAX_HISTORY_ITEMS = 10;
+      var DEFAULT_COMMUNITY_COLOR = "#222a2e";
+
+      $(document).ready(function () {
+        var currentUser = null;
+        var qs = new URLSearchParams(location.search);
+        var posts = [];
+        var communities = [];
+        var active = Number(qs.get("communityId") || 0);
+        var sort = "latest";
+        var boardQuery = "";
+
+        function getHistoryStorageKey() {
+          if (
+            currentUser &&
+            currentUser.id !== undefined &&
+            currentUser.id !== null
+          ) {
+            return HISTORY_STORAGE_KEY + String(currentUser.id);
+          }
+          if (currentUser && currentUser.email) {
+            return (
+              HISTORY_STORAGE_KEY +
+              ".email:" +
+              String(currentUser.email).toLowerCase()
+            );
+          }
+          return HISTORY_STORAGE_KEY + ".guest";
+        }
+
+        function toOneLineSummary(text, maxLen) {
+          var limit = maxLen || 60;
+          var normalized = String(text || "")
+            .replace(/\s+/g, " ")
+            .trim();
+          if (!normalized) return "본문 내용 없음";
+          if (normalized.length <= limit) return normalized;
+          return normalized.slice(0, limit) + "...";
+        }
+
+        function cloneTemplate(selector) {
+          var tpl = $(selector)[0];
+          if (!tpl || !tpl.content) return $();
+          return $(tpl.content.cloneNode(true)).children().first();
+        }
+
+        function logException(context, err, extra) {
+          console.error("[예외 발생]", context, {
+            error: err,
+            message: err && err.message,
+            stack: err && err.stack,
+            extra: extra,
+          });
+        }
+
+        function getSessionId() {
+          return localStorage.getItem("SessionId") || "";
+        }
+
+        function getAuthHeaders() {
+          var sessionId = getSessionId();
+          return sessionId ? { Authorization: sessionId } : {};
+        }
+
+        function syncSearchQueryInUrl(searchValue) {
+          var params = new URLSearchParams(location.search);
+          var trimmed = String(searchValue || "").trim();
+          if (trimmed) {
+            params.set("search", trimmed);
+          } else {
+            params.delete("search");
+          }
+          params.delete("q");
+          var queryStr = params.toString();
+          var nextUrl = location.pathname + (queryStr ? "?" + queryStr : "");
+          if (location.pathname + location.search !== nextUrl) {
+            history.replaceState(null, "", nextUrl);
+          }
+        }
+
+        function syncCommunityHeader() {
+          if (Number(active) === 0) {
+            $("#communityTitle").text("전체");
+            $("#communityTitleSecret").addClass("hidden");
+            return;
+          }
+
+          var matched = (communities || []).find(function (c) {
+            return Number(c.id) === Number(active);
+          });
+
+          if (matched) {
+            $("#communityTitle").text(matched.title || "전체");
+            $("#communityTitleSecret").toggleClass(
+              "hidden",
+              !Boolean(matched.is_secret),
+            );
+          } else {
+            $("#communityTitle").text("전체");
+            $("#communityTitleSecret").addClass("hidden");
+          }
+        }
+
+        function resolveImageUrl(path) {
+          if (!path) return "";
+          if (/^(https?:\/\/|data:|blob:)/i.test(path)) {
+            return path;
+          }
+          var baseOrigin = API_BASE_URL.replace(
+            /\/index\.php\/?$/i,
+            "",
+          ).replace(/\/+$/, "");
+          var cleanPath = String(path).replace(/^\/+/, "");
+          return baseOrigin ? `${baseOrigin}/${cleanPath}` : cleanPath;
+        }
+
+        function handleLogout() {
+          var signoutUrl = `${API_BASE_URL}/signout`;
+          $.ajax({
+            url: signoutUrl,
+            type: "POST",
+            headers: getAuthHeaders(),
+            dataType: "json",
+          })
+            .fail(function (xhr) {
+              console.warn("[로그아웃 요청 경고]", {
+                url: signoutUrl,
+                status: xhr && xhr.status,
+                responseJSON: xhr && xhr.responseJSON,
+                responseText: xhr && xhr.responseText,
+              });
+            })
+            .always(function () {
+              try {
+                localStorage.removeItem("SessionId");
+                sessionStorage.clear();
+                currentUser = null;
+                renderAuthUI();
+                renderUserHistory();
+                loadBoards(active);
+              } catch (err) {
+                logException("handleLogout always", err);
+              }
+            });
+        }
+
+        function renderAuthUI() {
+          try {
+            var $headerInner = $("header > div");
+            $headerInner.find("[data-dynamic-auth]").remove();
+
+            var $userStatus = $("#userStatusText");
+            var $userActions = $("#userActions").empty();
+
+            var headerLoggedInTpl = $("#headerLoggedInTemplate")[0];
+            var actionsLoggedInTpl = $("#userActionsLoggedInTemplate")[0];
+            var actionsGuestTpl = $("#userActionsGuestTemplate")[0];
+
+            if (currentUser) {
+              $headerInner.find('[data-auth-link="signin"]').addClass("hidden");
+
+              if (headerLoggedInTpl && headerLoggedInTpl.content) {
+                var $headerFrag = $(headerLoggedInTpl.content.cloneNode(true));
+                $headerFrag
+                  .find('[data-dynamic-auth="email"]')
+                  .text(currentUser.email || "");
+
+                if (currentUser.role === "admin") {
+                  $headerFrag
+                    .find('[data-dynamic-auth="admin"]')
+                    .removeClass("hidden")
+                    .addClass("flex");
+                }
+
+                $headerFrag
+                  .find('[data-dynamic-auth="logout"]')
+                  .on("click", handleLogout);
+
+                $headerInner.append($headerFrag);
+              }
+
+              $userStatus.text(
+                (currentUser.email || "로그인 회원") +
+                  (currentUser.role ? " (" + currentUser.role + ")" : ""),
+              );
+
+              $userActions.removeClass("grid-cols-2").addClass("grid-cols-1");
+              if (actionsLoggedInTpl && actionsLoggedInTpl.content) {
+                var $actionsFrag = $(
+                  actionsLoggedInTpl.content.cloneNode(true),
+                );
+                $actionsFrag
+                  .find('[data-action="logout"]')
+                  .on("click", handleLogout);
+                $userActions.append($actionsFrag);
+              }
+            } else {
+              $headerInner
+                .find('[data-auth-link="signin"]')
+                .removeClass("hidden");
+
+              $userStatus.text("비로그인 상태 · 글 읽기가 가능합니다.");
+              $userActions.removeClass("grid-cols-1").addClass("grid-cols-2");
+
+              if (actionsGuestTpl && actionsGuestTpl.content) {
+                $userActions.append(actionsGuestTpl.content.cloneNode(true));
+              }
+            }
+          } catch (err) {
+            logException("renderAuthUI", err, { currentUser: currentUser });
+          }
+        }
+
+        function createBoardButtonElement(c, templateEl) {
+          var isActive = Number(c.id) === Number(active);
+          var $node = $(templateEl.content.cloneNode(true));
+          var $btn = $node.find("[data-board-btn]");
+
+          if (c.is_secret) {
+            $node.find("[data-secret]").removeClass("hidden");
+          }
+
+          $node.find("[data-title]").text(c.title || "");
+
+          if (isActive) {
+            $btn.addClass("bg-[#22282a] text-white");
+          } else {
+            $btn.addClass("text-[#cbd5d9]");
+          }
+
+          $btn.on("click", function () {
+            var selectedId = Number(c.id);
+
+            loadBoards(selectedId, undefined, function () {
+              active = selectedId;
+              syncCommunityHeader();
+              renderCommunitiesSidebar();
+              var params = new URLSearchParams();
+              params.set("communityId", active);
+              var currentSearch = String($("#search").val() || "").trim();
+              if (currentSearch) {
+                params.set("search", currentSearch);
+              }
+              history.replaceState(null, "", "index.html?" + params.toString());
+              $("#sidebar").removeClass("open");
+            });
+          });
+
+          return $node;
+        }
+
+        function renderCommunitiesSidebar() {
+          try {
+            var $normalBoards = $("#nomalBoards").empty();
+            var $secretBoards = $("#boards").empty();
+            var templateEl = $("#boardItemTemplate")[0];
+            var normalizedQuery = String(boardQuery || "")
+              .trim()
+              .toLowerCase();
+
+            $("#clearBoardSearchBtn").toggleClass("hidden", !normalizedQuery);
+
+            var allCommunities = communities || [];
+            var normalList = allCommunities.filter(function (c) {
+              return !Boolean(c.is_secret);
+            });
+            var secretList = allCommunities.filter(function (c) {
+              return Boolean(c.is_secret);
+            });
+
+            if (normalizedQuery) {
+              normalList = normalList.filter(function (c) {
+                return String(c.title || "")
+                  .toLowerCase()
+                  .includes(normalizedQuery);
+              });
+              secretList = secretList.filter(function (c) {
+                return String(c.title || "")
+                  .toLowerCase()
+                  .includes(normalizedQuery);
+              });
+            } else {
+              normalList = [{ id: 0, title: "전체", is_secret: false }].concat(
+                normalList,
+              );
+            }
+
+            if (!normalList.length) {
+              $normalBoards.append(
+                $("<p>")
+                  .addClass("px-3 py-4 text-center text-xs text-[#8ea0a9]")
+                  .text(
+                    normalizedQuery
+                      ? "일치하는 게시판이 없습니다."
+                      : "등록된 게시판이 없습니다.",
+                  ),
+              );
+            } else {
+              normalList.forEach(function (c) {
+                $normalBoards.append(createBoardButtonElement(c, templateEl));
+              });
+            }
+
+            if (!secretList.length) {
+              $secretBoards.append(
+                $("<p>")
+                  .addClass("px-3 py-4 text-center text-xs text-[#8ea0a9]")
+                  .text(
+                    normalizedQuery
+                      ? "일치하는 비밀 게시판이 없습니다."
+                      : "등록된 비밀 게시판이 없습니다.",
+                  ),
+              );
+            } else {
+              secretList.forEach(function (c) {
+                $secretBoards.append(createBoardButtonElement(c, templateEl));
+              });
+            }
+          } catch (err) {
+            logException("renderCommunitiesSidebar", err, {
+              active: active,
+              communities: communities,
+              boardQuery: boardQuery,
+            });
+          }
+        }
+
+        function loadIdentity() {
+          var sessionId = getSessionId();
+          if (!sessionId) {
+            currentUser = null;
+            renderAuthUI();
+            renderUserHistory();
+            loadBoards(active);
+            return;
+          }
+
+          var meUrl = `${API_BASE_URL}/me`;
+          $.ajax({
+            url: meUrl,
+            type: "GET",
+            headers: {
+              Authorization: sessionId,
+            },
+            dataType: "json",
+          })
+            .done(function (res) {
+              currentUser = res ? res.body : null;
+            })
+            .fail(function (xhr) {
+              console.warn("[내 정보 조회 실패]", {
+                url: meUrl,
+                status: xhr && xhr.status,
+                responseJSON: xhr && xhr.responseJSON,
+                responseText: xhr && xhr.responseText,
+              });
+              if (xhr && Number(xhr.status) === 401) {
+                localStorage.removeItem("SessionId");
+              }
+              currentUser = null;
+            })
+            .always(function () {
+              try {
+                renderAuthUI();
+                renderUserHistory();
+                loadBoards(active);
+              } catch (err) {
+                logException("loadIdentity always", err);
+              }
+            });
+        }
+
+        function loadBoards(communityId, overridePassword, onSuccess) {
+          var storageKey = "community.password." + communityId;
+          var password =
+            overridePassword !== undefined
+              ? overridePassword
+              : sessionStorage.getItem(storageKey);
+
+          var headers = getAuthHeaders();
+          if (password !== null && password !== undefined) {
+            headers["Comunity-Password"] = password;
+          }
+
+          var params = new URLSearchParams();
+          params.set("communityId", communityId);
+          var searchVal = String($("#search").val() || "").trim();
+          if (searchVal) {
+            params.set("search", searchVal);
+          }
+
+          var boardsUrl = `${API_BASE_URL}/boards?${params.toString()}`;
+          $.ajax({
+            url: boardsUrl,
+            type: "GET",
+            headers: headers,
+            dataType: "json",
+          })
+            .done(function (res) {
+              try {
+                if (
+                  overridePassword !== undefined &&
+                  overridePassword !== null
+                ) {
+                  sessionStorage.setItem(storageKey, overridePassword);
+                }
+                var body = (res && res.body) || {};
+                posts = Array.isArray(body.boards) ? body.boards : [];
+                if (Array.isArray(body.community) && body.community.length) {
+                  communities = body.community;
+                  renderCommunitiesSidebar();
+                }
+                syncCommunityHeader();
+                renderPosts();
+                if (typeof onSuccess === "function") {
+                  onSuccess();
+                }
+              } catch (err) {
+                logException("loadBoards done", err, {
+                  url: boardsUrl,
+                  communityId: communityId,
+                  res: res,
+                });
+              }
+            })
+            .fail(function (xhr) {
+              var status = Number((xhr && xhr.status) || 0);
+              var shouldPromptPassword =
+                (!currentUser || currentUser.role !== "admin") &&
+                (status === 403 ||
+                  (overridePassword !== undefined && status === 0));
+
+              if (shouldPromptPassword) {
+                sessionStorage.removeItem(storageKey);
+
+                var promptMessage =
+                  overridePassword !== undefined
+                    ? "비밀번호가 틀렸습니다. 다시 입력하세요."
+                    : "비밀 게시판 비밀번호를 입력하세요.";
+
+                var inputPassword = prompt(promptMessage);
+
+                if (inputPassword === null) {
+                  history.back();
+                  return;
+                }
+
+                loadBoards(communityId, inputPassword, onSuccess);
+              }
+            });
+        }
+
+        function loadHistoryFromStorage() {
+          try {
+            var key = getHistoryStorageKey();
+            var raw = localStorage.getItem(key);
+            if (!raw) return [];
+            var parsed = JSON.parse(raw);
+            return Array.isArray(parsed) ? parsed : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        function saveHistoryToStorage(items) {
+          try {
+            var key = getHistoryStorageKey();
+            localStorage.setItem(key, JSON.stringify(items));
+          } catch (e) {
+            // 스토리지 용량 초과 등 예외 무시
+          }
+        }
+
+        function recordVisitHistoryFromPost(
+          post,
+          targetCommunityId,
+          badgeColor,
+        ) {
+          if (!post || !post.id) return;
+
+          var entry = {
+            id: Number(post.id),
+            communityId: Number(targetCommunityId || 0),
+            community: post.community_type || "일반",
+            communityColor: badgeColor || DEFAULT_COMMUNITY_COLOR,
+            title: post.title || "제목 없음",
+            author:
+              post.email || (post.userId ? "회원 #" + post.userId : "익명"),
+            summary: toOneLineSummary(post.content, 60),
+            visitedAt: Date.now(),
+          };
+
+          var list = loadHistoryFromStorage().filter(function (item) {
+            return Number(item && item.id) !== Number(entry.id);
+          });
+
+          list.unshift(entry);
+          if (list.length > MAX_HISTORY_ITEMS) {
+            list = list.slice(0, MAX_HISTORY_ITEMS);
+          }
+
+          saveHistoryToStorage(list);
+          renderUserHistory();
+        }
+
+        function clearAllHistory() {
+          try {
+            localStorage.removeItem(getHistoryStorageKey());
+          } catch (e) {
+            // 스토리지 접근 불가 시 예외 무시
+          }
+          renderUserHistory();
+        }
+
+        function renderUserHistory() {
+          try {
+            var $container = $("#userHistory").empty();
+            var historyList = loadHistoryFromStorage();
+
+            $("#clearHistoryBtn").toggleClass("hidden", !historyList.length);
+
+            if (!historyList.length) {
+              var $empty = cloneTemplate("#historyEmptyTemplate");
+              $empty.text("아직 방문한 게시글이 없습니다.");
+              $container.append($empty);
+              return;
+            }
+
+            historyList.forEach(function (item) {
+              var targetId = Number((item && item.id) || 0);
+              var targetCommunityId = Number((item && item.communityId) || 0);
+              var href =
+                "board.html?id=" +
+                targetId +
+                (targetCommunityId ? "&communityId=" + targetCommunityId : "");
+
+              var $card = cloneTemplate("#historyCardTemplate");
+              $card.find("[data-history-link]").attr("href", href);
+              $card
+                .find("[data-history-community]")
+                .text((item && item.community) || "일반")
+                .css(
+                  "background-color",
+                  (item && item.communityColor) || DEFAULT_COMMUNITY_COLOR,
+                );
+              $card
+                .find("[data-history-author]")
+                .text((item && item.author) || "익명");
+              $card
+                .find("[data-history-title]")
+                .text((item && item.title) || "제목 없음");
+              $card
+                .find("[data-history-summary]")
+                .text((item && item.summary) || "본문 내용 없음");
+
+              $container.append($card);
+            });
+          } catch (err) {
+            logException("renderUserHistory", err);
+          }
+        }
+        function extractPostsFromResponse(res) {
+          if (Array.isArray(res)) return res;
+          if (res && res.body && Array.isArray(res.body.boards))
+            return res.body.boards;
+          if (res && Array.isArray(res.body)) return res.body;
+          if (res && res.body && Array.isArray(res.body.posts))
+            return res.body.posts;
+          return [];
+        }
+
+        function fetchPosts(options) {
+          var opts = options || {};
+          var rawQuery =
+            opts.search !== undefined
+              ? String(opts.search || "").trim()
+              : String($("#search").val() || "").trim();
+
+          syncSearchQueryInUrl(rawQuery);
+
+          var params = new URLSearchParams();
+          if (active && active !== "all") {
+            params.set("communityId", active);
+          }
+          if (rawQuery) {
+            params.set("search", rawQuery);
+          }
+
+          var queryString = params.toString();
+          var url =
+            API_BASE_URL + "/boards" + (queryString ? "?" + queryString : "");
+
+          return $.ajax({
+            url: url,
+            type: "GET",
+            headers: getAuthHeaders(),
+            dataType: "json",
+          })
+            .done(function (res) {
+              if (res && res.body && Array.isArray(res.body.community)) {
+                communities = res.body.community;
+              }
+              posts = extractPostsFromResponse(res);
+              renderPosts();
+            })
+            .fail(function (xhr) {
+              if (typeof fail === "function") {
+                fail(xhr);
+              } else {
+                console.error("게시글 조회 실패:", xhr);
+              }
+            });
+        }
+
+        function renderPosts() {
+          try {
+            var list = posts.slice();
+
+            list.sort(function (a, b) {
+              if (sort === "popular") {
+                return Number(b.likeCount || 0) - Number(a.likeCount || 0);
+              }
+              if (sort === "comments") {
+                return (
+                  Number(b.commentCount || 0) - Number(a.commentCount || 0)
+                );
+              }
+              return Number(b.id || 0) - Number(a.id || 0);
+            });
+
+            var $posts = $("#posts").empty();
+            if (!list.length) {
+              $posts.text("등록된 게시글이 없습니다.");
+              return;
+            }
+
+            var templateEl = $("#postTemplate")[0];
+            list.forEach(function (p) {
+              var $node = $(templateEl.content.cloneNode(true));
+              var matchedCommunity = communities.find(function (c) {
+                return c.title === p.community_type;
+              });
+              var targetCommunityId = matchedCommunity
+                ? matchedCommunity.id
+                : active;
+              var badgeColor =
+                p.colorCode ||
+                (matchedCommunity && matchedCommunity.color_code) ||
+                "#273033";
+
+              $node
+                .find("[data-category]")
+                .text(p.community_type || "일반")
+                .css("background-color", badgeColor);
+
+              var isSecretPost = Boolean(
+                p.isSecret || (matchedCommunity && matchedCommunity.is_secret),
+              );
+
+              if (isSecretPost) {
+                $node.find("[data-secret]").removeClass("hidden");
+              }
+
+              $node.find("[data-date]").text(p.createdAt || "");
+
+              var postHref =
+                "board.html?id=" + p.id + "&communityId=" + targetCommunityId;
+
+              $node
+                .find("[data-link]")
+                .attr("href", postHref)
+                .on("click", function (e) {
+                  if (isSecretPost && !currentUser) {
+                    e.preventDefault();
+                    alert("로그인 해주세요.");
+                    return;
+                  }
+                  recordVisitHistoryFromPost(p, targetCommunityId, badgeColor);
+                });
+
+              $node.find("[data-title]").text(p.title || "");
+              $node.find("[data-excerpt]").text(p.content || "");
+
+              var $img = $node.find("[data-image]");
+              if (
+                p.isMasked ||
+                !Array.isArray(p.images) ||
+                !p.images.length ||
+                !p.images[0]
+              ) {
+                $img.remove();
+              } else {
+                var resolvedImgUrl = resolveImageUrl(p.images[0]);
+                $img.attr("src", resolvedImgUrl).on("error", function () {
+                  console.warn("[게시글 이미지 로드 실패]", {
+                    postId: p.id,
+                    rawImage: p.images[0],
+                    resolvedImageUrl: resolvedImgUrl,
+                  });
+                  $(this).remove();
+                });
+              }
+
+              $node
+                .find("[data-votes]")
+                .text("좋아요 " + Number(p.likeCount || 0));
+              $node
+                .find("[data-comments]")
+                .text("댓글 " + Number(p.commentCount || 0));
+              $node
+                .find("[data-author]")
+                .text(p.email || (p.userId ? "회원 #" + p.userId : ""));
+
+              $posts.append($node);
+            });
+          } catch (err) {
+            logException("renderPosts", err, {
+              active: active,
+              sort: sort,
+              postsCount: posts.length,
+            });
+          }
+        }
+
+        var searchDebounceTimer = null;
+
+        $("#searchForm").on("submit", function (e) {
+          e.preventDefault();
+          clearTimeout(searchDebounceTimer);
+          fetchPosts({ search: $("#search").val() });
+        });
+
+        // 커뮤니티 검색 이벤트
+        $("#boardSearch").on("input", function () {
+          boardQuery = $(this).val() || "";
+          renderCommunitiesSidebar();
+        });
+
+        $("#clearBoardSearchBtn").on("click", function () {
+          boardQuery = "";
+          $("#boardSearch").val("").trigger("focus");
+          renderCommunitiesSidebar();
+        });
+
+        $("#search").val(qs.get("search") || qs.get("q") || "");
+
+        $("#menuButton").on("click", function () {
+          $("#sidebar").toggleClass("open");
+        });
+
+        $("#clearHistoryBtn").on("click", function () {
+          clearAllHistory();
+        });
+
+        $(".sort").on("click", function () {
+          sort = $(this).data("sort");
+          $(".sort")
+            .removeClass("bg-[#242a2d] text-white")
+            .addClass("text-[#8ea0a8]");
+          $(this).removeClass("text-[#8ea0a8]").addClass("bg-[#242a2d]");
+          renderPosts();
+        });
+
+        $("#writeLink").on("click", function (e) {
+          if (!currentUser) {
+            alert("로그인 해주세요.");
+          }
+        });
+
+        renderCommunitiesSidebar();
+        syncCommunityHeader();
+        renderUserHistory();
+        loadIdentity();
+      });
+    </script>
+  </body>
+</html>

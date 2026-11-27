@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>EZ LINK</title>
+    <link href="./css/output.css" rel="stylesheet" />
+    <script src="./js/jquery-3.5.1.js"></script>
+    <script src="./js/config.js"></script>
+  </head>
+  <body
+    class="grid min-h-screen place-items-center bg-[#0d1011] p-5 font-['Noto_Sans_KR',sans-serif] text-white antialiased"
+  >
+    <main class="w-full max-w-md">
+      <a href="index.html" class="mx-auto mb-8 block w-fit text-xl font-black"
+        >EZ LINK</a
+      >
+      <section class="rounded-xl border border-[#252c2f] bg-[#13181a] p-7">
+        <p class="text-sm font-bold text-[#9baab1]">함께 이야기해요</p>
+        <h1 class="mt-1 text-2xl font-black sm:text-3xl">회원가입</h1>
+        <p class="mt-2 text-sm text-[#8ea0a9]">
+          이메일 하나로 바로 시작할 수 있어요.
+        </p>
+        <form id="form" class="mt-7 grid gap-4">
+          <label class="grid gap-2 text-sm font-bold"
+            >이메일<input
+              id="email"
+              type="email"
+              required
+              autocomplete="email"
+              class="rounded-xl border border-[#252c2f] bg-[#0d1011] p-3 text-white focus:border-[#46545a] focus:outline-none"
+          /></label>
+          <label class="grid gap-2 text-sm font-bold"
+            >비밀번호<input
+              id="password"
+              type="password"
+              minlength="8"
+              required
+              autocomplete="new-password"
+              class="rounded-xl border border-[#252c2f] bg-[#0d1011] p-3 text-white focus:border-[#46545a] focus:outline-none"
+          /></label>
+          <label class="grid gap-2 text-sm font-bold"
+            >비밀번호 확인<input
+              id="confirm"
+              type="password"
+              minlength="8"
+              required
+              autocomplete="new-password"
+              class="rounded-xl border border-[#252c2f] bg-[#0d1011] p-3 text-white focus:border-[#46545a] focus:outline-none"
+          /></label>
+          <p id="message" class="hidden" role="alert"></p>
+          <button
+            type="submit"
+            class="mt-2 cursor-pointer rounded-full bg-white py-3 font-black text-[#101314] transition hover:bg-slate-200 disabled:opacity-50"
+          >
+            가입하기
+          </button>
+        </form>
+        <p class="mt-6 text-center text-sm text-[#8ea0a9]">
+          이미 계정이 있나요?
+          <a href="signin.html" class="font-bold text-white hover:underline"
+            >로그인</a
+          >
+        </p>
+      </section>
+    </main>
+    <script>
+      var API_BASE_URL =
+        window.LOCAL_API_URL || "https://dev01.ezapps.co.kr/index.php";
+
+      $(function () {
+        function showMessage(text, isError) {
+          $("#message")
+            .text(text)
+            .attr(
+              "class",
+              "rounded-xl p-3 text-sm " +
+                (isError
+                  ? "bg-red-950 text-red-200"
+                  : "bg-emerald-950 text-emerald-200"),
+            );
+        }
+
+        $("#form").on("submit", function (e) {
+          e.preventDefault();
+          if ($("#password").val() !== $("#confirm").val()) {
+            showMessage("비밀번호가 일치하지 않습니다.", true);
+            return;
+          }
+          var $button = $(this)
+            .find('button[type="submit"]')
+            .prop("disabled", true);
+          var body = new FormData();
+          body.append("email", $("#email").val());
+          body.append("password", $("#password").val());
+          $.ajax({
+            url: API_BASE_URL + "/signup",
+            type: "POST",
+            data: body,
+            processData: false,
+            contentType: false,
+            dataType: "json",
+          })
+            .done(function () {
+              alert("가입이 완료되었습니다. 로그인해 주세요.");
+              setTimeout(function () {
+                location.href = "signin.html";
+              }, 700);
+            })
+            .fail(function (xhr) {
+              console.log(xhr.responseJSON.message);
+              showMessage("회원가입에 실패했습니다.", true);
+            })
+            .always(function () {
+              $button.prop("disabled", false);
+            });
+        });
+      });
+    </script>
+  </body>
+</html>
