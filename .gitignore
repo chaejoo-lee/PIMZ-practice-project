@@ -1,5 +1,18 @@
 # 환경변수 
+src/.env
 
 # JS
+js/
+
+# Composer
+vendor/ 
+composer.json
+composer.lock
+
+# 업로드한 파일
+uploads/ 
 
 # css
+tailwindcss
+css/
+input.css
